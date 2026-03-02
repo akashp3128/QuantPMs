@@ -1,0 +1,50 @@
+# Credentials - NEVER commit these
+*.pem
+*.key
+credentials/
+kalshi_private_key*
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Trade logs and memory (may contain sensitive data)
+workspace/memory/*.json
+memory/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

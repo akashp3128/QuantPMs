@@ -1,0 +1,27 @@
+{
+  "_comment": "Add this configuration to your ~/.openclaw/openclaw.json",
+
+  "agents": {
+    "list": [
+      {
+        "id": "quant-sim",
+        "workspace": "/home/node/.openclaw/agents/quant-sim/workspace",
+        "model": "claude-opus-4-6"
+      }
+    ]
+  },
+
+  "bindings": [
+    {
+      "_comment": "Route messages from a specific Discord channel to quant-sim",
+      "agentId": "quant-sim",
+      "match": {
+        "channel": "discord",
+        "peer": {
+          "kind": "channel",
+          "id": "YOUR_DISCORD_CHANNEL_ID"
+        }
+      }
+    }
+  ]
+}

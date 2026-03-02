@@ -1,0 +1,22 @@
+{
+  "trades": [
+    {
+      "timestamp": "2026-03-02T12:00:00Z",
+      "ticker": "EXAMPLE-TICKER",
+      "side": "yes",
+      "contracts": 5,
+      "price": 45,
+      "cost": 2.25,
+      "model_probability": 0.52,
+      "market_probability": 0.45,
+      "edge": 0.07,
+      "kelly_fraction": 0.145,
+      "reason": "Example: Model estimates 52% probability, market at 45%"
+    }
+  ],
+  "metadata": {
+    "bankroll_initial": 50.00,
+    "max_per_trade": 10.00,
+    "max_daily_loss": 15.00
+  }
+}
