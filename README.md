@@ -1,85 +1,78 @@
-# Quant-Sim Agent
+# QuantPMs
 
-An autonomous prediction market trading agent powered by Monte Carlo simulations. Built for [OpenClaw](https://github.com/openclaw/openclaw).
+Institutional-grade prediction market simulation engine with live trading capabilities.
+
+Built for [OpenClaw](https://github.com/openclaw/openclaw).
 
 ## Overview
 
-Quant-Sim is a specialized AI agent that combines quantitative finance techniques with prediction market trading on [Kalshi](https://kalshi.com). It analyzes markets using statistical simulations, identifies mispricings, and executes trades autonomously within defined risk parameters.
+QuantPMs combines quantitative finance techniques with prediction market trading on [Kalshi](https://kalshi.com). It provides rigorous Monte Carlo simulations, variance reduction methods, real-time Bayesian updating, and autonomous trading within defined risk parameters.
 
-### Features
+### Core Capabilities
 
-- **Monte Carlo Simulations** - Generate thousands of scenarios to estimate probabilities
-- **Statistical Rigor** - Every estimate includes confidence intervals and standard errors
-- **Autonomous Trading** - Execute trades on Kalshi when edge exceeds thresholds
-- **Risk Management** - Kelly criterion position sizing with strict limits
-- **Interactive Visualizations** - Plotly.js charts via OpenClaw's canvas tool
-- **Discord Integration** - Control and monitor via dedicated Discord channel
+| Skill | Description |
+|-------|-------------|
+| **Monte Carlo** | Foundation simulation for binary contracts |
+| **Variance Reduction** | Importance sampling, antithetic variates (100-10,000x efficiency) |
+| **Particle Filters** | Sequential Monte Carlo for real-time probability updates |
+| **Copula Modeling** | Tail dependence for correlated outcomes |
+| **Agent-Based Sim** | Market microstructure and price discovery |
+| **Kalshi Trading** | Live trading with RSA-PSS authentication |
 
 ## Quick Start
 
 ### Prerequisites
 
-- [OpenClaw](https://github.com/openclaw/openclaw) installed and running
+- [OpenClaw](https://github.com/openclaw/openclaw) installed
 - [Kalshi](https://kalshi.com) account with API access
-- Discord bot configured in OpenClaw
+- Discord bot configured (optional)
 
 ### Installation
 
-1. **Clone this repository:**
 ```bash
-git clone https://github.com/YOUR_USERNAME/quant-sim-agent.git
-cd quant-sim-agent
+# Clone repository
+git clone https://github.com/akashp3128/QuantPMs.git
+cd QuantPMs
+
+# Copy to OpenClaw
+mkdir -p ~/.openclaw/agents/quantpms/workspace
+cp -r workspace/* ~/.openclaw/agents/quantpms/workspace/
+cp -r skills/* ~/.openclaw/skills/
+cp -r knowledge ~/.openclaw/agents/quantpms/
+cp RULES.md ~/.openclaw/agents/quantpms/workspace/
 ```
 
-2. **Copy agent files to OpenClaw:**
-```bash
-# Create agent workspace
-mkdir -p ~/.openclaw/agents/quant-sim/workspace
+### Configure Kalshi Credentials
 
-# Copy agent configuration
-cp workspace/SOUL.md ~/.openclaw/agents/quant-sim/workspace/
-cp workspace/AGENTS.md ~/.openclaw/agents/quant-sim/workspace/
-
-# Copy Kalshi skill
-mkdir -p ~/.openclaw/skills/kalshi
-cp skills/kalshi/* ~/.openclaw/skills/kalshi/
-```
-
-3. **Set up Kalshi API credentials:**
 ```bash
 # Create credentials directory
 mkdir -p ~/.openclaw/credentials
 
-# Save your Kalshi private key (from Kalshi dashboard)
-# IMPORTANT: Replace with YOUR private key
+# Save your private key (from Kalshi dashboard)
 cat > ~/.openclaw/credentials/kalshi_private_key.pem << 'EOF'
 -----BEGIN RSA PRIVATE KEY-----
 YOUR_PRIVATE_KEY_HERE
 -----END RSA PRIVATE KEY-----
 EOF
 
-# Secure the key file
 chmod 600 ~/.openclaw/credentials/kalshi_private_key.pem
-```
 
-4. **Configure environment variables:**
-
-Add to your `.env` file or shell profile:
-```bash
-export KALSHI_API_KEY_ID="your-api-key-id-here"
+# Set environment variables
+export KALSHI_API_KEY_ID="your-api-key-id"
 export KALSHI_PRIVATE_KEY_PATH="$HOME/.openclaw/credentials/kalshi_private_key.pem"
 ```
 
-5. **Register the agent in OpenClaw:**
+### Register Agent
 
 Add to `~/.openclaw/openclaw.json`:
+
 ```json
 {
   "agents": {
     "list": [
       {
-        "id": "quant-sim",
-        "workspace": "/home/node/.openclaw/agents/quant-sim/workspace",
+        "id": "quantpms",
+        "workspace": "/home/node/.openclaw/agents/quantpms/workspace",
         "model": "claude-opus-4-6"
       }
     ]
@@ -87,42 +80,160 @@ Add to `~/.openclaw/openclaw.json`:
 }
 ```
 
-6. **Optional: Bind to Discord channel:**
-```json
-{
-  "bindings": [
-    {
-      "agentId": "quant-sim",
-      "match": {
-        "channel": "discord",
-        "peer": {
-          "kind": "channel",
-          "id": "YOUR_DISCORD_CHANNEL_ID"
-        }
-      }
+## Simulation Techniques
+
+### Monte Carlo Estimation
+
+```python
+import numpy as np
+
+def simulate_binary_contract(S0, K, mu, sigma, T, n_sims=100000):
+    """Estimate P(S_T > K) using GBM simulation."""
+    np.random.seed(42)
+
+    Z = np.random.standard_normal(n_sims)
+    S_T = S0 * np.exp((mu - 0.5*sigma**2)*T + sigma*np.sqrt(T)*Z)
+
+    payoffs = (S_T > K).astype(float)
+    p_hat = payoffs.mean()
+    se = np.sqrt(p_hat * (1 - p_hat) / n_sims)
+
+    return {
+        "estimate": p_hat,
+        "std_error": se,
+        "ci_95": (p_hat - 1.96*se, p_hat + 1.96*se),
+        "n_samples": n_sims
     }
-  ]
-}
 ```
 
-7. **Restart OpenClaw gateway**
+**Convergence Rate:** `O(N^{-1/2})` - halve error by 4x samples.
 
-## Usage
+### Variance Reduction
+
+Importance sampling achieves **100-10,000x** efficiency for rare events:
+
+```python
+def importance_sampling_tail(threshold, n_sims=1000):
+    """Estimate P(Z > threshold) efficiently."""
+    shift = threshold
+    Z = np.random.normal(shift, 1, n_sims)
+    weights = np.exp(-shift * Z + 0.5 * shift**2)
+    indicators = (Z > threshold).astype(float)
+
+    return (indicators * weights).mean()
+```
+
+### Particle Filters
+
+Real-time Bayesian updating for live events:
+
+```python
+class ParticleFilter:
+    def update(self, observation):
+        # Propagate particles via logit random walk
+        # Reweight based on observation likelihood
+        # Resample when ESS < N/2
+        pass
+```
+
+### Copula Modeling
+
+**Critical for correlated contracts.** Gaussian copulas have zero tail dependence - use Student-t for extreme events:
+
+| Copula | Lower Tail λ | Upper Tail λ |
+|--------|-------------|--------------|
+| Gaussian | 0 | 0 |
+| Student-t (ν=4) | 0.18 | 0.18 |
+| Clayton | > 0 | 0 |
+| Gumbel | 0 | > 0 |
+
+## Trading Strategy
+
+### Edge Calculation
+
+```
+Edge = Model Probability - Market Price
+```
+
+**Only trade when Edge > 5%**
+
+### Position Sizing (Half-Kelly)
+
+```
+f = (p × b - q) / b × 0.5
+```
+
+### Risk Limits
+
+| Parameter | Default |
+|-----------|---------|
+| Max per trade | 20% of bankroll |
+| Max daily loss | 30% of bankroll |
+| Max open positions | 5 |
+| Min required edge | 5% |
+
+## Key Formulas
+
+### Sample Size for Precision
+```
+N = z²_{α/2} × p(1-p) / ε²
+```
+
+### Geometric Brownian Motion
+```
+S_T = S_0 × exp((μ - 0.5σ²)T + σ√T × Z)
+```
+
+### Brier Score (Calibration)
+```
+BS = (1/N) × Σ(p_i - o_i)²
+```
+
+- BS < 0.10 = Excellent
+- BS < 0.25 = Good
+
+See `knowledge/formulas.md` for complete reference.
+
+## Project Structure
+
+```
+QuantPMs/
+├── agent.yaml           # Agent configuration
+├── RULES.md             # Operational guidelines
+├── workspace/
+│   ├── SOUL.md          # Agent identity
+│   └── AGENTS.md        # Trading rules
+├── knowledge/
+│   ├── formulas.md      # Key formulas
+│   ├── references.md    # Academic citations
+│   └── index.yaml       # Knowledge index
+├── skills/
+│   ├── monte-carlo/     # Foundation simulation
+│   ├── variance-reduction/  # Efficiency techniques
+│   ├── particle-filter/ # Real-time updating
+│   ├── copula-modeling/ # Dependency modeling
+│   ├── agent-based-sim/ # Market microstructure
+│   └── kalshi/          # Live trading client
+└── examples/
+    ├── .env.example
+    └── trades.example.json
+```
+
+## Usage Examples
 
 ### Via Discord
-
-Send messages to your bound Discord channel:
 
 ```
 Check my Kalshi balance
 ```
 
 ```
-Analyze S&P 500 markets for trading opportunities
+Run Monte Carlo simulation: Will S&P close above 5000 by Friday?
+Current: 4980, volatility: 15%, drift: 10%
 ```
 
 ```
-Run Monte Carlo simulation for Bitcoin hitting $100k
+Analyze correlation between swing state outcomes using t-copula
 ```
 
 ### Via CLI
@@ -136,157 +247,23 @@ node ~/.openclaw/skills/kalshi/kalshi_client.js positions
 
 # Browse markets
 node ~/.openclaw/skills/kalshi/kalshi_client.js markets
-
-# Get specific market
-node ~/.openclaw/skills/kalshi/kalshi_client.js market INXD-26MAR07-T4950
-```
-
-## Simulation Techniques
-
-### Monte Carlo Simulation
-
-Core technique for probability estimation with convergence rate O(N^{-1/2}).
-
-```python
-import numpy as np
-
-def monte_carlo_estimate(n_sims=100000):
-    outcomes = np.random.binomial(1, p=0.52, size=n_sims)
-    p_hat = outcomes.mean()
-    se = np.sqrt(p_hat * (1 - p_hat) / n_sims)
-
-    return {
-        "estimate": p_hat,
-        "std_error": se,
-        "ci_95": (p_hat - 1.96*se, p_hat + 1.96*se),
-        "n_samples": n_sims
-    }
-```
-
-### Geometric Brownian Motion
-
-For modeling asset price paths:
-
-```
-S[t+1] = S[t] * exp((μ - 0.5σ²)Δt + σ√Δt * Z)
-```
-
-### Variance Reduction
-
-- **Importance Sampling** - 10-100x improvement for tail risk estimation
-- **Antithetic Variates** - Reduce variance using negatively correlated samples
-
-## Trading Strategy
-
-### Edge Calculation
-
-```
-Edge = Model Probability - Market Price
-```
-
-Only trade when Edge > 5%
-
-### Position Sizing (Half-Kelly)
-
-```
-Position = (p × b - q) / b × 0.5 × Bankroll
-```
-
-Where:
-- p = model probability
-- q = 1 - p
-- b = payout odds
-
-### Risk Limits
-
-| Parameter | Default |
-|-----------|---------|
-| Bankroll | $50 |
-| Max per trade | $10 (20%) |
-| Max daily loss | $15 (30%) |
-| Max open positions | 5 |
-| Min required edge | 5% |
-
-Customize these in `workspace/AGENTS.md`.
-
-## Configuration
-
-### SOUL.md
-
-Defines the agent's identity and core values:
-- Rigorous statistical methodology
-- Code as proof (executable examples)
-- Transparent assumptions
-- Calibrated confidence
-
-### AGENTS.md
-
-Contains operational rules:
-- Must-always / must-never constraints
-- Code standards (NumPy vectorization, confidence intervals)
-- Trading authorization and limits
-- Visualization standards
-
-## Architecture
-
-```
-Discord
-    │
-    ▼
-OpenClaw Gateway
-    │
-    ▼
-quant-sim Agent
-    │
-    ├── Monte Carlo Engine (Python/NumPy)
-    ├── Kalshi Client (Node.js)
-    └── Canvas Visualizations (Plotly.js)
-    │
-    ▼
-Kalshi Exchange
-```
-
-## API Authentication
-
-The Kalshi client uses RSA-PSS signatures:
-
-1. **Message format:** `{timestamp_ms}{METHOD}{/trade-api/v2/path}`
-2. **Algorithm:** RSA-PSS with SHA256, salt length 32
-3. **Encoding:** Base64
-
-## File Structure
-
-```
-quant-sim-agent/
-├── README.md
-├── LICENSE
-├── .gitignore
-├── workspace/
-│   ├── SOUL.md          # Agent identity
-│   ├── AGENTS.md        # Rules and trading config
-│   └── memory/          # Trade logs (gitignored)
-└── skills/
-    └── kalshi/
-        ├── SKILL.md     # API documentation
-        └── kalshi_client.js  # Trading client
 ```
 
 ## Disclaimers
 
-1. **Educational Purpose** - Simulations and strategies are for learning
-2. **Not Financial Advice** - Model outputs are tools, not signals
+1. **Educational Purpose** - Simulations are for learning, not guaranteed profits
+2. **Not Financial Advice** - Model outputs are tools, not trading signals
 3. **Risk of Loss** - Never trade more than you can afford to lose
 4. **Model Limitations** - Real markets have fat tails and volatility clustering
-5. **Regulatory** - Kalshi is CFTC-regulated; comply with applicable laws
 
-## Contributing
+## References
 
-Contributions welcome! Please:
+See `knowledge/references.md` for academic citations including:
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+- Kyle (1985) - Market microstructure
+- Glasserman (2004) - Monte Carlo methods
+- Gode & Sunder (1993) - Zero-intelligence traders
+- Aas et al. (2009) - Vine copulas
 
 ## License
 
@@ -298,4 +275,4 @@ MIT License - see [LICENSE](LICENSE)
 
 ---
 
-*Built for autonomous prediction market trading with statistical rigor.*
+*Institutional-grade prediction market simulation with live trading capabilities.*

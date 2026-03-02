@@ -1,0 +1,10 @@
+# Knowledge Base Index
+
+documents:
+  - file: formulas.md
+    description: Key mathematical formulas for simulation and trading
+    always_load: true
+
+  - file: references.md
+    description: Academic references and foundational papers
+    always_load: false

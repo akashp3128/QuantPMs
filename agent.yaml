@@ -1,0 +1,53 @@
+spec: "0.1.0"
+
+name: QuantPMs
+version: 1.0.0
+license: MIT
+author: Akash Patel
+
+description: |
+  Institutional-grade prediction market simulation engine with live trading capabilities.
+  Combines Monte Carlo methods, importance sampling, particle filters, copula modeling,
+  and agent-based market microstructure with executable implementations. Integrated with
+  Kalshi for autonomous trading.
+
+model:
+  primary: claude-opus-4-6
+  fallback:
+    - claude-sonnet-4-5
+    - claude-haiku-4-5
+  temperature: 0.1
+  max_tokens: 16384
+
+skills:
+  - name: monte-carlo
+    description: Foundation Monte Carlo simulation for binary contracts
+  - name: variance-reduction
+    description: Importance sampling, antithetic variates, control variates
+  - name: particle-filter
+    description: Sequential Monte Carlo for real-time probability updates
+  - name: copula-modeling
+    description: Tail dependence modeling for correlated outcomes
+  - name: agent-based-sim
+    description: Market microstructure and price discovery simulation
+  - name: kalshi
+    description: Live trading on Kalshi prediction markets
+
+knowledge:
+  - formulas.md
+  - references.md
+
+runtime:
+  max_turns: 50
+  timeout_seconds: 600
+
+tags:
+  - monte-carlo
+  - prediction-markets
+  - quantitative-finance
+  - simulation
+  - variance-reduction
+  - particle-filter
+  - copula
+  - kalshi
+  - trading
